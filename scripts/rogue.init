@@ -1,0 +1,28 @@
+#!/sbin/openrc-run
+# Rogue-in-C OpenRC service (external-init supervision, PV-001 Q3).
+# The watchdog is health-only; OpenRC decides restart policy.
+
+name="rogue"
+description="Rogue-in-C minimal Rogue core"
+command="/usr/local/bin/rogue"
+command_args="run --interval 60"
+command_background="yes"
+pidfile="/run/${RC_SVCNAME}.pid"
+output_log="/var/log/rogue.log"
+error_log="/var/log/rogue.err"
+
+: "${ROGUE_RELAY:=wss://relay.roguenetwork.org}"
+: "${ROGUE_NAK:=/usr/local/bin/nak}"
+: "${ROGUE_NSEC:=/etc/rogue/nsec.key}"
+: "${ROGUE_DIR:=/var/lib/rogue}"
+
+depend() {
+    need net
+    after firewall
+}
+
+start_pre() {
+    checkpath --directory --mode 0700 "$ROGUE_DIR"
+    checkpath --file --mode 0600 "$ROGUE_NSEC"
+    export ROGUE_RELAY ROGUE_NAK ROGUE_NSEC ROGUE_DIR
+}
